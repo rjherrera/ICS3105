@@ -1,0 +1,2 @@
+- Se incluye el informe en [main.pdf](Informe/main.pdf) y su respectivo código Latex en la carpeta [Informe](Informe)
+- Se incluyen ciertos archivos y programas con el código utilizado para las preguntas 3 y 4 en [Código](Código)
