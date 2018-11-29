@@ -1,0 +1,239 @@
+\documentclass[letterpaper,10pt]{article}
+
+\usepackage{template}
+\usepackage{indentfirst}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{ dsfont }
+
+% \usepackage[nottoc]{tocbibind}
+
+\linespread{1.25}
+\begin{document}
+\renewcommand{\refname}{Referencias}
+\begin{tabular}{ccl}
+\begin{tabular}{c}
+\psfig{file=puclogo.eps}
+\end{tabular}
+\begin{tabular}{l}
+\tiny{\ }\\ \normalsize
+\sc Pontificia Universidad Católica de Chile\\
+\sc Escuela de Ingeniería\\
+\sc Departamento de Ingeniería Industrial y de Sistemas\\
+\sc ICS3105 Optimización Dinámica (2018-2)\\
+\sc Profesor Mathias Klapp
+\end{tabular}
+\end{tabular}
+\begin{center}
+\vspace{220px}
+\Huge \bf Entrega 2\\
+\large \bf Agendamiento de pabellones\\
+\vspace{200px}
+\vspace{1ex}\small Mariavictoria Enberg (mdenberg@uc.cl) \\ Ignacio Guridi (iguridi@uc.cl) \\ Felipe Haase (fahaase@uc.cl) \\ Raimundo Herrera (rjherrera@uc.cl)
+\end{center}
+\thispagestyle{empty}
+\pagebreak
+\setcounter{page}{1}
+
+\section*{Contexto}
+El quirófano es, por extensión, todo local convenientemente acondicionado para hacer cirugía \cite{rae}. Con cirugía se entiende a toda actividad terapéutica, que implica la incisión de la piel u otros planos, con el fin de extirpar, drenar, liberar o efectuar un aseo quirúrgico ante un cuadro patológico.
+
+Como se puede suponer, es una parte fundamental para los hospitales, y juega un rol preponderante en el bienestar de las personas. A la vez, es un lugar en donde hay mucho por mejorar en términos de eficiencia. En Chile, de acuerdo a un reporte del MINSAL al Congreso, el promedio de espera para los chilenos por una cirugía es de 492 días \cite{leiva}. Claramente, al aumentar la proporción en que el pabellón se ocupa, podrá aumentar la cantidad de personas atendidas y disminuir los precios.
+
+Para realizar un tratamiento quirúrgico se necesita de una serie de recursos: un equipo médico, un pabellón y los implementos para llevarla a cabo. Además, este tipo de tratamientos tiene una característica singular: puede ser agendado o puede ser de urgencia. En caso de urgencia, si no hay pabellones disponibles, se pospone una hora agendada cuya operación no sea tan apremiante. El hospital debe considerar estos imprevistos en su planificación, pues retrasar operaciones agendadas conlleva un costo económico para el hospital, lo que implica un costo en la confianza con el paciente por retrasar el cumplimiento de lo planificado.
+
+Las distintas clínicas y hospitales que ofrecen cirugías se ven enfrentados a esta decisión: cuántos pabellones dejar libres para atender las cirugías de urgencias, considerando que un pabellón desocupado no genera ingresos para el hospital, y postergar cirugías tiene una penalidad asociada.
+
+\section*{Naturaleza del problema}
+Las clínica y hospitales deben satisfacer la mayor cantidad de demanda posible con un número limitado de pabellones, en presencia de incertidumbre por la llegada inesperada de pacientes que necesitan operaciones con urgencia. Estas operaciones en general no pueden ser pospuestas, y se deben tomar decisiones complejas por parte del hospital a la hora de disponibilizar pabellones. De este modo, debe decidir dónde asignar a los pacientes de forma de anticiparse a las llegadas inesperadas, junto con tomar decisiones sobre los posponer operaciones previamente agendadas, en caso de que dicha anticipación no haya sido adecuada. 
+
+Existen costos asociados a reagendar operaciones, esto es, en caso de recibir una operación prioritaria de urgencia, y tener que sacar a un paciente previamente agendado, se incurre en un costo. Y por otro lado, los costos de posponer agendamiento, esto es, no agendar a aquellos pacientes que requieren un horario y atrasar dicha decisión. De este modo el objetivo a tratar es minimizar dichos costos.
+
+\section*{Obtención de datos}
+
+Para este problema la obtención de datos es crucial, de modo que se le dio especial énfasis en el desarrollo del mismo. Se determinó que para la modelación adecuada, es necesario obtener tasas realistas de llegada de pacientes a hospitales, tanto de urgencia como pacientes normales. Estas tasas de llegada se pueden aproximar por diversos métodos, como intentar obtenerlas desde datos reales aproximando a distribuciones, buscar información disponible de internet, realizar simulaciones, entre otros.
+
+Se optó por realizar más de uno de los enfoques anteriormente propuestos con el objetivo de tener, en primer lugar, más variedad de datos, y en segundo lugar, una validación cruzada de los mismos, de modo de evitar sesgos y falta de información.
+
+En una primera instancia se trabaja desde los resultados. Esto es, se obtienen las tasas de ocupación de los pabellones, tipos de operaciones, etc, a partir de datos reales obtenidos de reportes anuales del Ministerio de Salud. Esta información se obtiene de los repositorios disponibilizados por el organismo \cite{minsal} y corresponden a informes agregados de los diversos datos, tales como cirugías de urgencia en los últimos 10 años, cantidad de ellas desglosada semanalmente, por región, por hospital, etc.
+
+Luego, a partir de estos datos se simulan llegadas de pacientes y asignaciones, las que se ajustan hasta llegar a combinaciones que muestren una adecuación realista a la realidad, de forma que los resultados de la simulación sean concordantes con los obtenidos en el paso anterior. Finalmente estas tasas de llegada realistas se usarán en el modelo.
+
+Cabe señalar que para esta sección, y para evitar utilizar datos demasiado ruidosos, se acotaron los datos a aquellos datos de los últimos 3 años y el lo transcurrido del presente, esto es, 2015-2018. Además, se restringió la área de estudio a la Región Metropolitana en Hospitales, dejando de lado las otras regiones del país y también las otras instituciones sanitarias como el SAPU y el SAR puesto que ellas no concentraban cantidades relevantes de realizaciones de cirugías.
+
+Para la realización de simulaciones, se utilizó el lenguaje de programación Python, en conjunto con la librería de simulación Simpy \cite{simpy}, especializada para la simulación de eventos discretos basados en procesos, y que cuenta con implementaciones para el manejo de recursos limitados, como es en este caso, el uso de pabellones. Para las tasas obtenidas a partir de los datos, se simularon realizaciones con distintas distribuciones, pero la que más se ajustó a la línea base es la distribución exponencial, de modo que se asumen tiempos de llegada exponencial entre los pacientes para la simulación, y esto da resultados concordantes con los obtenidos anteriormente. 
+
+\section*{Metodología}
+Para modelar este problema se utilizará un enfoque de MDP (proceso de decisión markoviano). Se eligió este enfoque debido a la incertidumbre intrínseca del problema y, además, existen pacientes agendados y de urgencia. En este enfoque se asumirá que la llegada de ambos tipos de pacientes, urgentes y no urgentes ocurre de manera aleatoria, por lo que existe incertidumbre respecto a cómo utilizar los pabellones en el futuro.
+
+Por otro lado, se considera que si llega un paciente urgente, este debe ser agendado al módulo inmediatamente siguiente y en caso que sea necesario, esto es, que no exista un pabellón disponible para realizar ese agendamiento, se deberá posponer una cirugía programada para dar la atención a la urgencia, por su caracter prioritario.
+
+% AGREGAR CÓMO SE OBTUVIERON LOS DATOS
+
+Además, en cada período de tiempo pueden aparecer nuevos pacientes para agendar una cirugía. Es deber del modelo elegir la mejor decisión de agendamiento de manera dinámica para los pacientes que han llegado cada día.
+
+\section*{Revisión bibliográfica}
+
+El problema abordado corresponde a uno de 
+\textit{advanced scheduling} debido a que los agendamientos de pacientes se realizan en módulos posteriores a cuándo llega la solicitud. Este tipo de problema requiere un gran esfuerzo computacional debido a que es necesario tener en cuenta las restricciones de capacidad en el horizonte futuro \cite{Yasin}.
+
+Este problema ha sido resuelto con otro enfoques. En el caso de Gerchak et al. \cite{Gerchak}, Lamiri et al. \cite{Lamiri} Min y Yih \cite{Min} el problema se aborda con un enfoque de optimización estocástica. En el caso de Min y Yih \cite{Min} la demanda son determinísticas, mientras que Gerchak et al. la demanda es estocástica. Por otro lado, Lamiri et al. propone un método de optimización de Monte Carlo que combina la simulación de Monte Carlo y programación de enteros mixta. 
+
+El modelo presentado en este informe corresponde a uno de optimización dinámica. La modelación es muy similar a la presentada por Sauré y Puterman \cite{saure17}. En el modelo planteado se resuelve de manera aproximada el problema optimización dinámica que entrega el agendamietnos avanzado de atenciones médicas. El modelo planteado en este infome diferencia en los siguientes aspectos:
+\begin{itemize}
+    \item Se modela el agendamiento de pabellones.
+    \item Hay pacientes urgentes y no urgentes.
+    \item Las cirugías pueden tener distinta duración.
+    \item Las etapas corresponden a ventanas de tiempo en lugar de días.
+    \item El enfoque de solución es distinto.
+\end{itemize}
+
+En la siguiente sección se despliega el modelo de optimización dinámica que resuelve el agendamiento de pabellones con distintos tipos de pacientes.
+
+\section*{Modelo}
+
+\subsection*{Parámetros}
+
+    \begin{align*}
+        %N: & \quad \text{conjunto de módulos en los que se divide un día} \\
+        E: & \quad \text{cantidad de pabellones} \\
+        % U: & \quad \text{tipo de pacientes} \\
+        I: & \quad \text{total de tipos únicos de cirugías} \\ % \{urgente, no urgente\}} \\
+        V: & \quad \text{número total de módulos en el horizonte de agendamiento} \\
+        D: & \quad \text{módulos que puede esperar una cirugía de urgencia desde que es agendada} \\
+        %t_i: & \quad \text{tiempo de espera aceptable para el paciente $i$} \\
+        % C_i: & \quad \text{costo de postergar un módulo al paciente no urgente de tipo i} \\
+        % G_i: & \quad \text{costo de postergar un módulo al paciente no urgente de tipo i} \\
+        % M: & \quad \text{Ventana de tiempo en módulos hacia el futuro en la cual puede ser agendado un paciente} \\
+        q_{i,j}: &\quad \text{Cantidad de pacientes de tipo $i$ de urgencia $j$ llegados en un módulo} \\
+        g_{i}: & \quad \text{costo por reagendar un paciente de tipo $i$} \\
+        k_{i}: & \quad \text{costo por hacer esperar por un periodo el agendamiento del paciente urgente de tipo $i$} \\
+        h_{i}: & \quad \text{costo por hacer esperar por un periodo el agendamiento del paciente de tipo $i$} \\
+        r_i: & \quad \text{duración de la operación de tipo $i$} \\
+        Pr(x_{i,j}): &  \quad \text{probabilidad de  que lleguen $x$ pacientes de tipo $i$ de urgencia $j$ en un módulo de tiempo} \\
+    \end{align*}
+    
+\subsection*{Subíndices}
+    \begin{align*}
+        i: & \quad \text{tipo de cirugía} \quad i \in \{1, \ldots, I\} \\
+        v: & \quad \text{módulo} \quad v \in \{1, \ldots, V\} \\
+        j: & \quad \text{urgencia de cirugía} \quad j \in \{\text{urgente, no-urgente}\} \\
+    \end{align*}
+
+\subsection*{Etapas}
+$ t \in \{1, 2, \dots \} $
+    las etapas corresponden a ventanas de tiempo iguales a la cirugía más corta. 
+
+    \subsection*{Estados $s_t \in \mathds{S}$}
+    
+    $$s = (u, w) = (\{u_{i,v,j}\}, \{w_{i,j}\}) \quad \forall i,v,j$$ en donde
+    \begin{align*}
+        u_{i,v,j}:  & \quad \text{cantidad de pacientes de tipo $i$ de urgencia $j$ agendados en la ventana $v$ (La cirugía comienza en el módulo $v$). } \\
+        w_{i,j}: & \quad \text{cantidad de pacientes de tipo $i$ de urgencia $j$ esperando ser agendados} \\
+        %z_i: & \quad \text{cantidad de pacientes uregentes de tipo $i$ esperando ser agendados} \\
+    \end{align*}
+
+\subsection*{Variables de decisión}
+    
+    $$x = (x, y) = (\{x_{i,v, j}\}, \{y_{i,v}\}) \quad \forall i,v,j$$ en donde 
+    \begin{align*}
+        x_{i,v,j}: & \quad \text{cantidad de pacientes de tipo $i$ de urgencia $j$ asignados al módulo $v$} \\
+        y_{i,v}: & \quad \text{cantidad de pacientes de tipo $i$ reagendados originalmente agendados en el módulo $v$} \\
+    \end{align*}
+   Las decisiones deben cumplir las siguientes restricciones:
+    
+    
+    \begin{enumerate}
+        \item La cantidad de pacientes asignados de tipo $i$ debe ser menor o igual a la cantidad de pacientes de ese tipo esperando ser asignados
+    
+        $$\sum\limits_{v}x_{i,v,j} \leq w_{i,j} \quad \forall i,j$$
+        
+        \item El número de operaciones agendadas menos las reagendadas más las operaciones en proceso para cada módulo debe ser menor a la cantidad de pabellones
+    
+        % $$\sum\limits_{i=1}^{I} u_{i,v} - \sum\limits_{i=1}^{I}y_{i,v} + \sum\limits_{i=1}^{I}\sum\limits_{k=\max\{v-l_i+1, 1\}}^{\min\{v, V\}}r_{i,(v-k+1)}\cdot x_{i,k} \leq E, \quad i = 1, \ldots, I$$
+        
+        %$$\sum\limits_{i=1}^{I} u_{i,v} - \sum\limits_{i=1}^{I}y_{i,v} + \sum\limits_{i = 1}^{I}\sum\limits_{k = v}^{v + r_i} x_{i,k} \leq E, \quad i = 1, \ldots, I$$
+        
+        $$\sum\limits_{i}\sum\limits_{j} (u_{i,v,j} - y_{i,v,j} + \sum\limits_{k = v}^{v + r_i} x_{i,k,j}) \leq E, \quad \forall v$$
+        
+        \item No se pueden reagendar más operaciones que las no urgentes agendadas previamente
+    
+        $$y_{i,v,j} \le u_{i,v,j} \quad \forall i, \quad \forall i,v,j$$
+        
+        \item Las cirugías urgentes no pueden reagendarse
+    
+        $$y_{i,v,\text{urgente}} = 0 \quad \forall i,v$$
+        
+        \item Las cirugías urgentes deben agendarse dentro de los próximos D módulos
+        
+        $$\sum\limits_{v=D+1}^{V}x_{i,v,\text{urgente}} = 0 \quad \forall i$$
+        
+        \item Las cirugías son reagendadas dentro de los siguientes D módulos
+        
+        $$\sum\limits_{v=D}^{V}y_{i,v,j} = 0 \quad \forall i,j$$
+        
+        % \item Solo se puede agendar en un módulo si este no se encuentra en uso
+    
+        %$$x_{i',v} \le \sum\limits_{i = 1}^{I}\sum\limits_{k = v}^{v + r_i} \frac{E-u_{i,k} + y_{i,k}}{r_i} \quad i' = 1, \ldots, I \quad v = 1, \ldots, V $$
+    
+  
+    \end{enumerate}
+    
+    \subsection*{Probabilidades de transición}
+    
+    \[
+    \mathds{P}(s'| s, x) =
+         \begin{cases}
+            \prod \limits_{i=1}^I Pr(q_{i,j}) & \quad \text{si $s' = (u', w', z')$ satisface las ecuaciones \eqref{eq:1}, \eqref{eq:2}} \\
+            
+           0 & \quad\text{e.o.c }  \\
+         \end{cases}
+    \]
+    
+    \begin{equation}\label{eq:1}
+        u'_{i,v,j} =
+        \begin{cases} % no sé por qué es con m+1 y no m a solas
+            \sum\limits_{i}\sum\limits_{j} (u_{i,v,j} - y_{i,v,j} + \sum\limits_{k = v}^{v + r_i} x_{i,k,j}) &\quad v < V \\ 
+        
+            0 & \quad v = V  \\
+        \end{cases}
+    \end{equation}
+    
+    \begin{equation}\label{eq:2}
+        w'_{i,j} = w_{i,j} - \sum\limits_{v}x_{i,v,j} + q_{i,j} + \sum\limits_{v}y_{i,v,j}
+    \end{equation}
+
+    En donde \eqref{eq:1} se refiere a que los pacientes agendados en $v'$ debe ser la misma cantidad que la dada por los pacientes agendados previamente  menos los reagendados más los que están siendo operados. \eqref{eq:2} se refiere a que el número de pacientes de tipo $i$ esperando ser agendados debe ser igual a la cantidad de pacientes esperando ser agendados del periodo anterior menos la cantidad de pacientes agendados en ese periodo más la cantidad de pacientes esperando ser agendados que acaban de llegar ($q_{i,j}$) más la canitdad de pacientes reagendados que no fueron agendados nuevamente de forma inmediata.
+    
+\subsection*{Costo inmediato}
+
+    $$ c(s, x) = \sum\limits_{i}\Big{(} \sum\limits_{v,j}g_{i} \cdot y_{i,v,j} +  h_i \cdot (w_{i,\text{no-urgente}} - \sum\limits_{v} x_{i,v,\text{no-urgente}}) +  k_i \cdot (w_{i,\text{urgente}} -\sum\limits_{v} x_{i,v,\text{urgente}})\Big{)}$$
+    
+    Que corresponde a el costo de reagendar más el costo de posponer el agendamiento de pacientes no urgentes y urgentes.
+    
+\subsection*{Cost-to-go}
+
+    $$ V_t(s_t) = \min_{x_t \in \mathds{X}(s)} \Big{\{}c(s_t, x_t) + \lambda\sum\limits_{s_{t+1} \in \mathds{S}}^{\infty}\mathds{P}(s_{t+1}=s' | y_t, a_t) \cdot V_{t+1}(s')\Big{\}} $$
+    
+
+El tamaño del espacio de estados y el tamaño de las decisiones en cada uno de estos estados crece de manera exponencial a medida que e tipo de pacientes y el número de módulos considerados aumenta. Es por esto que para resolver el problema se utilizará una aproximación.
+
+
+\section*{Enfoque de solución}    
+
+Dado el gran espacio de estados y decisiones, no se han podido encontrar heurísticas y aproximaciones suficientes para que el problema se pueda resolver en un tiempo razonable.
+
+Los métodos intentados fueron LP e iteración de valor. El primero descartado por la gran cantidad de restricciones (una por estado) y la otra por la cantidad de decisiones que en cada iteración, se deben calcular.
+En particular, con 1 pabellones, 4 modulos, 1 tipo de urgencia de cirugia, se generan 65536 decisiones posibles $(2^{16})$. Siendo este alcance lo más reducido posible, ya que el problema original que se intentó abordar fue era de 20 modulos, 2 tipos de cirugias y 4 pabellones, lo que daba un total de $2^{160} = 1.46\text{x}10^{48}$ estados.
+
+Queda propuesto realizar un enfoque de iteración de valor con rollout, buscando una heurística que permita ignorar estados que no agregan valor a la solución. De esta forma se podrán reducir la cantidad de decisiones posibles a tomar.
+
+
+
+\small{
+	\bibliographystyle{plain}
+	\bibliography{referencias}
+}
+
+\end{document}

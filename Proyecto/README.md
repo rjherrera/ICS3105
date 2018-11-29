@@ -1,0 +1,3 @@
+Los archivos correspondientes a cada entrega se identifican según el prefijo `EX` con `X` entre 1 y 3. Hay informes y presentaciones en `.pdf` y también código python.
+
+Los archivos .py incluidos en la entrega 3 son parte de los utilizados para la resolución del proyecto, sin embargo, sufrieron muchas modificaciones para obtener los diferentes resultados que se mostraron en la presentación. Algunas de ellas están comentadas y algunas corresponden a los valores númericos que están con el valor de alguna de las pruebas realizadas. Otros elementos no se incluyen para evitar exceso de código inentendible.

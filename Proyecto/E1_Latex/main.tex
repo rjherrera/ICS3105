@@ -1,0 +1,109 @@
+\documentclass[letterpaper,10pt]{article}
+
+\usepackage{template}
+\usepackage{indentfirst}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{ dsfont }
+
+% \usepackage[nottoc]{tocbibind}
+
+\linespread{1.25}
+\begin{document}
+\renewcommand{\refname}{Referencias}
+\begin{tabular}{ccl}
+\begin{tabular}{c}
+\psfig{file=puclogo.eps}
+\end{tabular}
+\begin{tabular}{l}
+\tiny{\ }\\ \normalsize
+\sc Pontificia Universidad Católica de Chile\\
+\sc Escuela de Ingeniería\\
+\sc Departamento de Ingeniería Industrial y de Sistemas\\
+\sc ICS3105 Optimización Dinámica (2018-2)\\
+\sc Profesor Mathias Klapp
+\end{tabular}
+\end{tabular}
+\begin{center}
+\vspace{220px}
+\Huge \bf Entrega 1\\
+\large \bf Agendamiento de pabellones\\
+\vspace{200px}
+\vspace{1ex}\small Mariavictoria Enberg (mdenberg@uc.cl) \\ Ignacio Guridi (iguridi@uc.cl) \\ Felipe Haase (fahaase@uc.cl) \\ Raimundo Herrera (rjherrera@uc.cl)
+\end{center}
+\thispagestyle{empty}
+\pagebreak
+\setcounter{page}{1}
+
+\section*{Contexto}
+El quirófano es, por extensión, todo local convenientemente acondicionado para hacer cirugía \cite{rae}. Con cirugía se entiende a toda actividad terapéutica, que implica la incisión de la piel u otros planos, con el fin de extirpar, drenar, liberar o efectuar un aseo quirúrgico ante un cuadro patológico.
+
+Como se puede suponer, es una parte fundamental para los hospitales, y juega un rol preponderante en el bienestar de las personas. A la vez, es un lugar en donde hay mucho por mejorar en términos de eficiencia. En Chile, de acuerdo a un reporte del MINSAL al Congreso, el promedio de espera para los chilenos por una cirugía es de 492 días \cite{leiva}. Claramente, al aumentar la proporción en que el pabellón se ocupa, podrá aumentar la cantidad de personas atendidas y disminuir los precios.
+
+Para realizar un tratamiento quirúrgico se necesita de una serie de recursos: un equipo médico, un pabellón y los implementos para llevarla a cabo. Además, este tipo de tratamientos tiene una característica singular: puede ser agendado o puede ser de urgencia. En caso de urgencia, si no hay pabellones disponibles, se pospone una hora agendada cuya operación no sea tan apremiante. El hospital debe considerar estos imprevistos en su planificación, pues retrasar operaciones agendadas conlleva un costo económico para el hospital, que debe pagar horas extras a los empleados y implica un costo en la confianza con el paciente por retrasar el cumplimiento de lo planificado.
+
+Las distintas clínicas y hospitales que ofrecen cirugías se ven enfrentados a esta decisión: cuántos pabellones dejar libres para atender las cirugías de urgencias, considerando que un pabellón desocupado no genera ingresos para el hospital, y postergar cirugías tiene una penalidad asociada.
+
+\section*{Naturaleza del problema}
+Las clínica y hospirales deben satisfacer la mayor cantidad de demanda posible con un número limitado de pabellones, en presencia de incertidumbre por la llegada inesperada de pacientes que necesitan operaciones con urgencia. Por lo tanto, debe decidir cuántos pabellones debe dejar libre en cada módulo de tiempo. El objetivo es maximizar las ganancias, que es la suma entre los beneficios obtenidos por usar el pabellón menos los costos por tener que reprogramar las horas agendadas. 
+
+\section*{Metodología}
+Para modelar este problema se utilizará un enfoque de MDP (proceso de decisión markoviano). Se eligió este enfoque debido a la incertidumbre intrínseca del problema y, además, existen pacientes agendados y de urgencia. Donde se asumirá que para los primeros existe permanentemente una demanda mayor a la oferta de pabellones, y para los últimos, que llegan de manera aleatoria, por lo que existe incertidumbre respecto a cómo utilizar los pabellones en el futuro. Si llega un paciente urgente, deberán posponer una cirugía programada para dar la atención a la urgencia, lo que involucra un costo.
+
+Para tener datos lo más verídicos posibles se usarán datos reales del último mes en la Clínica Alemana. Luego estos mismos datos se utilizan para calcular las distribuciones de probabilidad de la llegada de pacientes urgentes.
+
+Además, en cada período de tiempo pueden aparecer nuevos pacientes para agendar una cirugía. Es deber del modelo elegir la mejor decisión de agendamiento de manera dinámica para los pacientes que han llegado cada día.
+
+\section*{Modelo}
+\begin{itemize}
+    \item Notación
+    \begin{align*}
+        B: & \quad \text{cantidad total de quirófanos} \\
+        h(x): & \quad \text{beneficio por hacer $x$ operaciones} \\
+        c(x): & \quad \text{penalización por postergar $x$ operaciones}
+    \end{align*}
+
+    \item Etapas
+    $$ t \in \{0,\dots,T\} $$
+    donde cada etapa $t$ es un módulo de tiempo, siendo $T$ la cantidad de módulos hacia el futuro que se quiera optimizar.
+
+    \item Estados
+    $$ \mathds{S} = \{ y_1, \dots,   y_T\}$$ 
+    Donde $y_i$ es la cantidad de operaciones pendientes de la etapa $i-1$ que no se pudieron llevar a cabo por falta de pabellones $i$.
+    \item Variables de decisión
+    $$ \mathds{X} = \{a_t\} \quad \text{con} \quad a_t \in \{1, \dots, B\}, \quad t \in \{0,\dots,T\}$$ 
+    Donde $a_t$ es la cantidad de pabellones agendados en el tiempo $t$.
+    
+    \item Probabilidades de transición
+    
+    \[
+    \mathds{P}(y_{t+1} = k | y_t, a_t) =
+         \begin{cases}
+            \mathds{P}(\mu_t \leq B - y_t - a_t) & \quad\text{si } k = 0 \\
+            \mathds{P}(\mu_t = B - y_t - a_t + k) & \quad\text{si }  k > 0 \\
+           0 & \quad\text{e.o.c }  \\
+         \end{cases}
+  \]
+
+    Con $\mu_t \sim \mathds{U}$, esto es, que la cantidad de pacientes de urgencia que requieren un pabellón para cada etapa $t$ distribuye según la distribución a determinar $\mathds{U}$. El primer caso corresponde a que no hayan sido requeridos reagendamientos. Luego, el segundo caso a que hayan $k$ reagendamientos, y finalmente el tercer caso, que ocurre con probabilidad 0, es que hayan reagendamientos negativos.
+    
+    \item Valor inmediato
+    $$ r(y_t, a_t) = h(\text{min}\{\mathds{E}(\mu) + a_t + y_t, B\}) - c(y_t) $$
+    
+    \item Value-to-go
+    $$ u^*_t(y_t) = \max_{a_t \in \mathds{X}} \big{\{}r(y_t, a_t) + \sum\limits_{i=0}^{\infty}\mathds{P}(y_{t+1}=i | y_t, a_t) \cdot u^*_{t+1}(i)\big{\}} $$
+    
+    \item Valor terminal
+    $$ u^*_T(y_T) = \max_{a \in \mathds{X}} \big{\{} r(y_T, a) \big{\}}$$
+    
+
+\end{itemize}
+
+
+\small{
+	\bibliographystyle{plain}
+	\bibliography{referencias}
+}
+
+\end{document}

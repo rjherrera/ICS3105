@@ -1,0 +1,211 @@
+\documentclass[letterpaper,10pt]{article}
+
+\usepackage{template}
+\usepackage{indentfirst}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{natbib}
+\usepackage{ dsfont }
+
+% \usepackage[nottoc]{tocbibind}
+
+\linespread{1.25}
+\begin{document}
+\renewcommand{\refname}{Referencias}
+\begin{tabular}{ccl}
+\begin{tabular}{c}
+\psfig{file=puclogo.eps}
+\end{tabular}
+\begin{tabular}{l}
+\tiny{\ }\\ \normalsize
+\sc Pontificia Universidad Católica de Chile\\
+\sc Escuela de Ingeniería\\
+\sc Departamento de Ingeniería Industrial y de Sistemas\\
+\sc ICS3105 Optimización Dinámica (2018-2)\\
+\sc Profesor Mathias Klapp
+\end{tabular}
+\end{tabular}
+\begin{center}
+\vspace{220px}
+\Huge \bf Entrega 3\\
+\large \bf Agendamiento de pabellones\\
+\vspace{200px}
+\vspace{1ex}\small Mariavictoria Enberg (mdenberg@uc.cl) \\ Ignacio Guridi (iguridi@uc.cl) \\ Felipe Haase (fahaase@uc.cl) \\ Raimundo Herrera (rjherrera@uc.cl)
+\end{center}
+\thispagestyle{empty}
+\pagebreak
+\setcounter{page}{1}
+
+\section*{Contexto}
+El quirófano es, por extensión, todo local convenientemente acondicionado para hacer cirugía \cite{rae}. Con cirugía se entiende a toda actividad terapéutica, que implica la incisión de la piel u otros planos, con el fin de extirpar, drenar, liberar o efectuar un aseo quirúrgico ante un cuadro patológico.
+
+Como se puede suponer, es una parte fundamental para los hospitales, y juega un rol preponderante en el bienestar de las personas. A la vez, es un lugar en donde hay mucho por mejorar en términos de eficiencia. En Chile, de acuerdo a un reporte del MINSAL al Congreso, el promedio de espera para los chilenos por una cirugía es de 492 días \cite{leiva}. Claramente, al aumentar la proporción en que el pabellón se ocupa, podrá aumentar la cantidad de personas atendidas y disminuir los precios.
+
+Para realizar un tratamiento quirúrgico se necesita de una serie de recursos: un equipo médico, un pabellón y los implementos para llevarla a cabo. Además, este tipo de tratamientos varía dependiendo del tipo de cirugía, en cuanto a la dificultad y por tanto el tiempo de duración. El hospital debe tener en cuenta estas variaciones para poder agendar de manera óptima según las duraciones de estas cirugías.
+
+\section*{Naturaleza del problema}
+Las clínica y hospitales deben satisfacer la mayor cantidad de demanda posible con un número limitado de pabellones, en presencia de incertidumbre por la llegada de pacientes de distintos tipos de cirugías.
+
+Existen costos asociados a la espera de los individuos. Se asume que el costo es igual para todos los individuos.
+
+\section*{Obtención de dato s}
+
+Para este problema la obtención de datos es crucial, de modo que se le dio especial énfasis en el desarrollo del mismo. Se determinó que para la modelación adecuada, es necesario obtener tasas realistas de llegada de pacientes a hospitales, tanto de urgencia como pacientes normales. Estas tasas de llegada se pueden aproximar por diversos métodos, como intentar obtenerlas desde datos reales aproximando a distribuciones, buscar información disponible de internet, realizar simulaciones, entre otros.
+
+Se optó por realizar más de uno de los enfoques anteriormente propuestos con el objetivo de tener, en primer lugar, más variedad de datos. En segundo lugar, una validación cruzada de los mismos, de modo de evitar sesgos y falta de información.
+
+En una primera instancia se trabaja desde los resultados. Esto es, se obtienen las tasas de ocupación de los pabellones, tipos de operaciones, etc., a partir de datos reales obtenidos de reportes anuales del Ministerio de Salud. Esta información se obtiene de los repositorios disponibilizados por el organismo \cite{minsal} y corresponden a informes agregados de los diversos datos, tales como cirugías de urgencia en los últimos 10 años, cantidad de ellas desglosada semanalmente, por región, por hospital, etc.
+
+Luego, a partir de estos datos se simulan llegadas de pacientes y asignaciones, las que se ajustan hasta llegar a combinaciones que muestren adecuarse a la realidad, de forma que los resultados de la simulación sean concordantes con los obtenidos en el paso anterior. Finalmente estas tasas de llegada realistas se usarán en el modelo.
+
+Cabe señalar que para esta sección, y para evitar utilizar datos demasiado ruidosos, se acotaron los datos a aquellos datos de los últimos 3 años y el lo transcurrido del presente, esto es, 2015-2018. Además, se restringió la área de estudio a la Región Metropolitana en Hospitales, dejando de lado las otras regiones del país y también las otras instituciones sanitarias como el SAPU y el SAR puesto que ellas no concentraban cantidades relevantes de realizaciones de cirugías.
+
+Para la realización de simulaciones, se utilizó el lenguaje de programación Python, en conjunto con la librería de simulación Simpy \cite{simpy}, especializada para la simulación de eventos discretos basados en procesos, y que cuenta con implementaciones para el manejo de recursos limitados, como es en este caso, el uso de pabellones. Para las tasas obtenidas a partir de los datos, se simularon realizaciones con distintas distribuciones, pero la que más se ajustó a la línea base es la distribución exponencial, de modo que se asumen tiempos de llegada exponencial entre los pacientes para la simulación, y esto da resultados concordantes con los obtenidos anteriormente. 
+
+\section*{Metodología}
+Para modelar este problema se utilizará un enfoque de MDP (proceso de decisión markoviano). Se eligió este enfoque debido a la incertidumbre intrínseca del problema y, además, existen pacientes agendados y por agendar. En este enfoque se asumirá que la llegada de los distintos tipos existentes de pacientes ocurre de manera aleatoria, por lo que existe incertidumbre respecto a cómo utilizar los pabellones en el futuro.
+
+En cada período de tiempo pueden aparecer nuevos pacientes para agendar una cirugía. Es deber del modelo elegir la mejor decisión de agendamiento de manera dinámica para los pacientes que han llegado cada día dependiendo del tipo.
+
+\section*{Revisión bibliográfica}
+
+El problema es similar al uno de 
+\textit{advanced scheduling} debido a que los agendamientos de pacientes se realizan en módulos posteriores a cuándo llega la solicitud. Sin embargo, el problema se simplificó debido a que este tipo de problema requiere un gran esfuerzo computacional debido a que es necesario tener en cuenta las restricciones de capacidad en el horizonte futuro \cite{Yasin}.
+
+Este problema ha sido resuelto con otro enfoques. En el caso de Gerchak et al. \cite{Gerchak}, Lamiri et al. \cite{Lamiri} Min y Yih \cite{Min} el problema se aborda con un enfoque de optimización estocástica. En el caso de Min y Yih \cite{Min} la demanda son determinísticas, mientras que Gerchak et al. la demanda es estocástica. Por otro lado, Lamiri et al. propone un método de optimización de Monte Carlo que combina la simulación de Monte Carlo y programación de enteros mixta. Este tipo de problema ha sido resuelto con un enfoque de optimización dinámica por Sauré y Puterman \cite{saure17}
+
+El modelo presentado en este informe corresponde a uno de optimización dinámica. En la siguiente sección se despliega el modelo de optimización dinámica que resuelve el agendamiento de pabellones con distintos tipos de pacientes.
+
+\section*{Modelo}
+
+\subsection*{Parámetros}
+
+    \begin{align*}
+        E: & \quad \text{capacidad del sistema} \\
+        I: & \quad \text{total de tipos de paciente}\\ 
+        q_{i}: &\quad \text{Cantidad de pacientes de tipo $i$ llegados en una etapa} \\
+        r_{i}: &\quad \text{Cantidad de pacientes de tipo $i$ que salen del sistema en una etapa} \\
+        k_{i}: & \quad \text{costo por hacer esperar por un periodo el agendamiento del paciente urgente de tipo $i$} \\
+        h: & \quad \text{costo por hacer esperar por un periodo el agendamiento de un  paciente} \\
+    \end{align*}
+    
+\subsection*{Subíndices}
+    \begin{align*}
+        i: & \quad \text{tipo de paciente, depende de su tasa de estadía.} \quad i \in \{1,\ldots, I\} \\
+        %v: & \quad \text{módulo} \quad v \in \{1, \ldots, V\} \\ \\
+    \end{align*}
+
+\subsection*{Etapas}
+$ t \in \{1, 2, \dots \} $
+    Cada etapa corresponde a un día
+
+    \subsection*{Estados $s_t \in \mathds{S}$}
+    
+    $$s = (u, w) = (\{u_{i}\}, \{w_{i}\}) \quad i \in \{1, \ldots, I\} $$ en donde
+    \begin{align*}
+        u_{i}: & \quad \text{cantidad de pacientes de tipo $i$ }  \\
+        w_{i}: & \quad \text{capacidad del sistema utilizado por pacientes de tipo $i$. } w_i \in \{0, 1, \dots, E\}\\
+    \end{align*}
+
+\subsection*{Variables de decisión}
+    
+    $$x = (x_{i}) \quad i \in \{1, \ldots, I\} $$ en donde 
+    \begin{align*}
+        x_{i}: & \quad \text{cantidad de pacientes de tipo $i$ asignados} \\
+    \end{align*}
+    
+    \subsection*{Probabilidades de transición}
+    
+    Sea $a_i$ total de personas que está en algún momento de la etapa usando una cama definido por $$a_i = w_i + x_{i}$$
+    
+    $$P_1(u'_{i}) = P(q_{i} = u_{i} - x_{i} - u'_{i})$$
+    
+    $$P_2(w'_{i}) = P(r_{i} = a_{i} - w'_{i} | a_i)$$
+    
+    \[
+    \mathds{P}(s'= (u'_{i}, w'_{i})| s, x) = 
+        \begin{cases}
+            % u'_{i,j} = q_{i,j} - x_{i,j} + u_{i,j}
+             
+             
+             \prod\limits_{i=1}^{I}P_1(u'_{i}) \cdot P_2(w'_{i})& \quad  \sum\limits_{i=1}^{I}w'_{i} < E\text{}\\
+           0 & \quad\text{e.o.c }  \\
+         \end{cases}
+    \]
+    
+    
+    La distribución de probabilidades de $r_i$ está dada por la siguiente expresión:
+    
+    $\mathds{P_3}(r_i = g | a_i) = {a_i\choose g}(1-e^{-\lambda_i})^g(e^{-\lambda_i})^{a_i-g}$
+    
+
+    
+\subsection*{Costo inmediato}
+
+    $$ c(s, x) = \sum\limits_{i} h \cdot (u_{i} - x_{i})$$
+
+    
+\subsection*{Cost-to-go}
+
+    $$ V_t(s_t) = \min_{x_t \in \mathds{X}(s)} \Big{\{}c(s_t, x_t) + \lambda \sum \limits_{s_{t+1} \in \mathds{S}}^{\infty}\mathds{P}(s_{t+1}=s' |s_t, x_t) \cdot V_{t+1}(s')\Big{\}} $$
+
+
+
+\section*{Enfoque de solución}
+
+Para encontrar la solución a este modelo se usó el algoritmo de \textit{value iteration}. Se eligió pues permite modelar el problema hasta el infinito, y permite tener la libertad de elegir el grado de cercanía al óptimo posible de la solución. El programa computacional se hizo en el lenguaje \texttt{python}, por su amplia cantidad de librerías disponibles para apoyarse en el desarrolllo de la solución. Específicamente, se usó la librería \texttt{scipy}, para poder trabajar con las distintas distribuciones de probabilidades presentes en el modelo. 
+
+En cuanto al tamaño del problema resuelto por el programa es bastante simplificado. Lo que más interesa en este caso no es obtener desiciones en tiempo real, sino que permita comparar pacientes de distintas características y obtener reglas generales de desición que se puedan aplicar al problema real. Para esto, las dimensiones del problema trabajados fueron \textit{ad-hoc} tal que permita obtener conclusiones a partir de sus resultados.
+
+\section*{Resultados}
+
+Se simularon 50 días con la política encontrada y este resultado se compara con la política utilizada actualmente.
+
+\subsection*{Comparación con heurística y análisis de sensibilidad}
+
+En el siguiente cuadro se compara el costo de la política óptima con otras políticas. 
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Política base} & \textbf{Variación en costo} \\ \hline
+FIFO                   & $+21\%$                     \\ \hline
+Preferir tipo 1        & $+10\%$                     \\ \hline
+Preferir tipo 2        & $+8\%$                      \\ \hline
+\end{tabular}
+\caption{Comparación 200 simulaciones con horizonte de 50 días}
+\end{table}
+
+Si se implementa un política FIFO es costo aumenta en un 21\%. En caso de darle preferencia a los pacientes tipo 1 el costo aumenta en un 10\%. Finalmente, si se da preferencia a los pacientes tipo 2 el costro aumenta en un 8\%.
+
+Una vez realizada la comparación con distintas políticas se realizó un análisis de sensibilidad. se analiza cómo cambia el costo al cambiar la tasa de llegada. A continuación se muestran los resultados.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Tasa de llegada} & \textbf{Política base} & \textbf{Variación en costo} \\ \hline
+$\lambda <<$ capacidad   & FIFO                   & $+0\%$                      \\ \hline
+$\lambda >>$ capacidad   & FIFO                   & $+1,7\%$                    \\ \hline
+\end{tabular}
+\caption{Variación del costo a medida que cambia la tasa de llegada}
+\end{table}
+
+El cuadro anterior muestra, que sólo en el caso de que la tasa de llegada sea mucho mayor que la capacidad del sistema el costo aumenta.
+
+\section*{Conclusiones}
+
+Para abordar el problema se trabajó con distintos enfoques y distintas modelaciones, varias de estas no pudieron ser resueltas. Esto se debió a la granularidad del problema, mientras más detallada era la modelación se hacía más complejo resolverlo. Se pudo evidenciar un \textit{trade-off} entre el detalle del problema y la capacidad de resolverlo. Debido a esto el enfoque utilizado posee simplificaciones.
+
+El modelo se comporta como es esperado, tiene poca ventaja cuando las decisiones son obvias. Por ejemplo, si llega muy poca gente ($\lambda$ pequeño) una política miope no tiene desventaja porque prácticamente no hay \textit{trade-off}. Al mismo tiempo con $\lambda$ mucho mayores cualquier decisión es muy costosa por lo que las decisiones no influyen tanto, o bien son marginales.
+
+También se observó que el problema es muy sensible a las maldiciones de dimesionalidad, pues el espacio de estados crece de manera explosiva. Si bien puede ser resuelto por iteración de valor, de manera exacta, si el espacio crece mucho, ya deja de ser factible resolverlo en un tiempo razonable, por lo que se recomienda un método aproximado.
+
+
+\small{
+	\bibliographystyle{plain}
+	\bibliography{referencias}
+}
+
+\end{document}
